@@ -36,13 +36,21 @@ const ProtectedLearningTab = () => {
 		if (authStatus !== "loading" && !isLoggedIn && !alertShown) {
 			setAlertShown(true);
 			Alert.alert("Not Logged In", "You must log in to view this tab.", [
-				{ text: "OK", onPress: () => navigation.navigate("SignIn") },
+				{
+					text: "OK",
+					onPress: () => navigation.navigate("Auth", { screen: "SignIn" }),
+				},
 			]);
 		}
 	}, [authStatus, isLoggedIn, alertShown, navigation]);
 
 	if (authStatus === "loading" || !isLoggedIn) {
-		return <ActivityIndicator />;
+		return (
+			<View style={styles.centerContainer}>
+				<ActivityIndicator size="large" color="#4287f5" />
+				<Text>Please log in to access learning</Text>
+			</View>
+		);
 	}
 
 	return <LearningStackScreens />;
@@ -146,6 +154,34 @@ function BottomTabs() {
 	);
 }
 
+// Main App Component with proper auth flow
+function AppContent() {
+	const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
+	const authStatus = useSelector((state) => state.auth.status);
+
+	// Show loading while auth status is being determined
+	if (authStatus === "loading") {
+		return (
+			<View style={styles.centerContainer}>
+				<ActivityIndicator size="large" color="#4287f5" />
+				<Text style={styles.loadingText}>Loading...</Text>
+			</View>
+		);
+	}
+
+	return (
+		<NavigationContainer>
+			<MainStack.Navigator screenOptions={{ headerShown: false }}>
+				{isLoggedIn ? (
+					<MainStack.Screen name="HomeTabs" component={BottomTabs} />
+				) : (
+					<MainStack.Screen name="Auth" component={AuthStackScreens} />
+				)}
+			</MainStack.Navigator>
+		</NavigationContainer>
+	);
+}
+
 export default function App() {
 	const [isLoading, setIsLoading] = useState(true);
 
@@ -170,12 +206,7 @@ export default function App() {
 	return (
 		<Provider store={store}>
 			<PersistGate loading={null} persistor={persistor}>
-				<NavigationContainer>
-					<MainStack.Navigator screenOptions={{ headerShown: false }}>
-						<MainStack.Screen name="Auth" component={AuthStackScreens} />
-						<MainStack.Screen name="HomeTabs" component={BottomTabs} />
-					</MainStack.Navigator>
-				</NavigationContainer>
+				<AppContent />
 			</PersistGate>
 		</Provider>
 	);
@@ -183,6 +214,12 @@ export default function App() {
 
 const styles = StyleSheet.create({
 	splashContainer: {
+		flex: 1,
+		justifyContent: "center",
+		alignItems: "center",
+		backgroundColor: "#fff",
+	},
+	centerContainer: {
 		flex: 1,
 		justifyContent: "center",
 		alignItems: "center",
